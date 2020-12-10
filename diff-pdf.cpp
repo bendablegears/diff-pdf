@@ -50,6 +50,7 @@ bool g_verbose = false;
 bool g_skip_identical = false;
 bool g_mark_differences = false;
 long g_channel_tolerance = 0;
+double g_difference_percent = 0;
 
 // Resolution to use for rasterization, in DPI
 #define RESOLUTION  300
@@ -121,6 +122,7 @@ cairo_surface_t *diff_images(cairo_surface_t *s1, cairo_surface_t *s2,
     rdiff.Offset(-rdiff.x, -rdiff.y);
 
     bool changes = false;
+	double changed_pixel_ratio = 0.0d;
 
     cairo_surface_t *diff =
         cairo_image_surface_create(CAIRO_FORMAT_RGB24, rdiff.width, rdiff.height);
@@ -200,8 +202,17 @@ cairo_surface_t *diff_images(cairo_surface_t *s1, cairo_surface_t *s2,
 		  || cb1 > (cb2+g_channel_tolerance) || cb1 < (cb2-g_channel_tolerance)
 		   )
                 {
-                    changes = true;
-                    linediff = true;
+					long rdiff = ((cr1 > cr2) ? (cr1-cr2) : (cr2-cr1));
+					long gdiff = ((cg1 > cg2) ? (cg1-cg2) : (cg2-cg1));
+					long bdiff = ((cb1 > cb2) ? (cb1-cb2) : (cb2-cb1));
+					long pixel_differnce = rdiff + gdiff + bdiff;
+					changed_pixel_ratio += (double)pixel_differnce / 3.0d / 255.0d /
+											(double)rdiff.width / (double)rdiff.height;
+					if (changed_pixel_ratio >= g_difference_percent)
+					{
+						changes = true;
+						linediff = true;
+					}
 
                     if ( thumbnail )
                     {
@@ -896,6 +907,10 @@ int main(int argc, char *argv[])
         { wxCMD_LINE_OPTION,
                   NULL, wxT28("channel-tolerance"), wxT28("consider channel values to be equal if within specified tolerance"),
                   wxCMD_LINE_VAL_NUMBER },
+				  
+		{ wxCMD_LINE_OPTION,
+          NULL, wxT28("difference-tolerance"), wxT28("consider PDF files to be equal if within specified tolerance"),
+          wxCMD_LINE_VAL_DOUBLE },
 
         { wxCMD_LINE_SWITCH,
                   NULL, wxT28("view"), wxT28("view the differences in a window") },
@@ -965,6 +980,14 @@ int main(int argc, char *argv[])
             fprintf(stderr, "Invalid channel-tolerance: %ld. Valid range is 0(default, exact matching)-255\n", g_channel_tolerance);
             return 2;
 	}
+    }
+	
+	if ( parser.Found(wxT("difference-tolerance"), &g_difference_percent) )
+    {
+        if (g_difference_percent < 0.0d || g_difference_percent > 1.0d) {
+            fprintf(stderr, "Invalid difference-tolerance: %f. Valid range is 0.0(default, exact matching)-1.0\n", g_difference_percent);
+            return 2;
+		}
     }
 
 
