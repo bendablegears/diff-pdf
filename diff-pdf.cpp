@@ -202,10 +202,10 @@ cairo_surface_t *diff_images(cairo_surface_t *s1, cairo_surface_t *s2,
 		  || cb1 > (cb2+g_channel_tolerance) || cb1 < (cb2-g_channel_tolerance)
 		   )
                 {
-					long c1grey = ( (0.3d * cr1) + (0.59d * cg1) + (0.11d * cb1) );
-					long c2grey = ( (0.3d * cr2) + (0.59d * cg2) + (0.11d * cb2) );
-					long pixel_differnce = ((c1grey > c2grey) ? (c1grey-c2grey) : (c2grey-c1grey));
-					changed_pixel_ratio += (double)pixel_differnce / 255.0d /
+					double c1grey = ( (0.3d * (double)cr1) + (0.59d * (double)cg1) + (0.11d * (double)cb1) );
+					double c2grey = ( (0.3d * (double)cr2) + (0.59d * (double)cg2) + (0.11d * (double)cb2) );
+					double pixel_differnce = ((c1grey > c2grey) ? (c1grey-c2grey) : (c2grey-c1grey));
+					changed_pixel_ratio += pixel_differnce / 255.0d /
 											(double)rdiff.width / (double)rdiff.height;
 					if (changed_pixel_ratio >= g_difference_percent)
 					{
